@@ -14,10 +14,15 @@ import glob
 import pytesseract
 import shutil
 from ultralytics import YOLO
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QLabel
+from PyQt5.QtGui import QPixmap
+
+
+DEBUG=False
 
 def model(image_file_name, MainWindow):
 
-    DEBUG=False
     loc = image_file_name.rfind("/")
     extracted_name = image_file_name[loc+1:len(image_file_name)]
     cropped_image_name = f'./runs/detect/predict/crops/bus-signs/{extracted_name}'
@@ -61,12 +66,12 @@ def model(image_file_name, MainWindow):
             if rotate:
                 if DEBUG:
                     print("image before deskew:")
-                cv2.imshow("before deskew", image)
+                    cv2.imshow("before deskew", image)
 
                 image = deskew(image_path_in_colab)
                 if DEBUG:
                     print("image after deskew:")
-                cv2.imshow("after deskew", image)
+                    cv2.imshow("after deskew", image)
 
             image_proportsion =  image.shape[0] / image.shape[1]
 
@@ -115,7 +120,10 @@ def model(image_file_name, MainWindow):
     pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files/Tesseract-OCR/tesseract.exe'
 
     shutil.rmtree(f'./runs/detect/predict', ignore_errors=True)
-    subprocess.run(["yolo", "task=detect", "mode=predict", f"model=./BusSignesModel.pt", "conf=0.6", f"source={image_file_name}", "save=True", "save_crop=True"])
+    #subprocess.run(["yolo", "task=detect", "mode=predict", f"model=./BusSignesModel.pt", "conf=0.6", f"source={image_file_name}", "save=True", "save_crop=True"])
+
+    model = YOLO("BusSignesModel.pt")
+    results = model.predict(image_file_name, task="detect",conf=0.6, save=True, save_crop=True)
 
     detect_digits, cropped_image =  detect_bus_signs_numbers(440, rotate=True)
   
@@ -123,11 +131,6 @@ def model(image_file_name, MainWindow):
         print("Done. detect=", detect_digits)
 
     return detect_digits, cropped_image
-
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QLabel
-from PyQt5.QtGui import QPixmap
 
 
 class Ui_MainWindow(QDialog):
@@ -170,8 +173,8 @@ class Ui_MainWindow(QDialog):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.boutton1.setText(_translate("MainWindow", "Click to uplode a picture"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Buys Station Detector - By Mika Yeshaayaou"))
+        self.boutton1.setText(_translate("MainWindow", "Upload Image"))
 
     def browsefiles(self):
         fname=QFileDialog.getOpenFileName(self, 'Open file', '', 'Images (*.png, *.xmp *.jpg)')
@@ -182,10 +185,12 @@ class Ui_MainWindow(QDialog):
 
         detect_digits,cropped_image = model(image_file_name, MainWindow)
 
-        self.lineEdit1.setText(detect_digits)
         pixmap = QPixmap(cropped_image)
         self.label.setPixmap(pixmap)
         self.label.updateGeometry()
+
+        self.lineEdit1.setText("Detected Bus Station: " + detect_digits)
+        self.lineEdit1.repaint()
 
 
 if __name__ == "__main__":
