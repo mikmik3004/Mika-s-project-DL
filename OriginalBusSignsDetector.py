@@ -15,20 +15,6 @@ import pytesseract
 import shutil
 from ultralytics import YOLO
 
-#class DoneDetectionEvent(QEvent)
-#    def __init__(self):
-#        super().__init__()
-
-#class Runnable(QRunnable):
-#    file_name = ""
-#    def __init__(self, file_name):
-#        super().__init__()
-#        self.file_name = file_name
-#
-#    def run(self):
-#        model(self.image_file_name)
-
-
 def model(image_file_name, MainWindow):
 
     DEBUG=False
@@ -125,6 +111,7 @@ def model(image_file_name, MainWindow):
 
         return digits, cropped_image_name
 
+    #Need to install Tesseract-OCR on the specified folder ("C:/Program Files")
     pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files/Tesseract-OCR/tesseract.exe'
 
     shutil.rmtree(f'./runs/detect/predict', ignore_errors=True)
@@ -134,9 +121,6 @@ def model(image_file_name, MainWindow):
   
     if DEBUG:  
         print("Done. detect=", detect_digits)
-
-    #DoneDetectionEvent doneEvent()
-    #QApplication.postEvent(&MainWindow, doneEvent)
 
     return detect_digits, cropped_image
 
@@ -184,30 +168,17 @@ class Ui_MainWindow(QDialog):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-#    def DoneDetectionEvent(self)
-#        self.lineEdit1.setText(detect_digits)
-#        pixmap = QPixmap(cropped_image)
-#        self.label.setPixmap(pixmap)
-#        self.label.updateGeometry()
-        
-
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.boutton1.setText(_translate("MainWindow", "Click to uplode a picture"))
 
     def browsefiles(self):
-        fname=QFileDialog.getOpenFileName(self, 'Open file', 'C:\\User Interface Mika 2023', 'Images (*.png, *.xmp *.jpg)')
+        fname=QFileDialog.getOpenFileName(self, 'Open file', '', 'Images (*.png, *.xmp *.jpg)')
         self.lineEdit1.setText("Detecting...")
         self.lineEdit1.repaint()
 
         image_file_name = fname[0]
-
-        #threadCount = QThreadPool.globalInstance().maxThreadCount()
-        #self.label.setText(f"Running {threadCount} Threads")
-        #pool = QThreadPool.globalInstance()
-        #runnable = Runnable(image_file_name, MainWindow)
-        #pool.start(runnable)
 
         detect_digits,cropped_image = model(image_file_name, MainWindow)
 

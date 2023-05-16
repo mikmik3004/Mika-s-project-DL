@@ -7,7 +7,8 @@
     <StartupFile>OriginalBusSignsDetector.py</StartupFile>
     <SearchPath>
     </SearchPath>
-    <WorkingDirectory>C:\mika-local-final</WorkingDirectory>
+    <WorkingDirectory>
+    </WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DL5Project</Name>
     <RootNamespace>DL5Project</RootNamespace>
@@ -21,6 +22,9 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'conf1' ">
+    <OutputPath>bin\conf1\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="OriginalBusSignsDetector.py" />
