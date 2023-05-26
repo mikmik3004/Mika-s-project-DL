@@ -15,11 +15,10 @@ import pytesseract
 import shutil
 from ultralytics import YOLO
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QLabel
+from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QRect, Qt
 
-
-DEBUG=False
 
 def model(image_file_name, MainWindow):
 
@@ -27,11 +26,6 @@ def model(image_file_name, MainWindow):
     extracted_name = image_file_name[loc+1:len(image_file_name)]
     cropped_image_name = f'./runs/detect/predict/crops/bus-signs/{extracted_name}'
   
-    if DEBUG:
-        print("Loading Image=" + image_file_name)
-        print("extracted name:", extracted_name)
-        print("Expected Croped Image:" + cropped_image_name)
-
     def rotate(image: np.ndarray, angle: float, background: Union[int, Tuple[int, int, int]]) -> np.ndarray:
         old_width, old_height = image.shape[:2]
         angle_radian = math.radians(angle)
@@ -55,28 +49,15 @@ def model(image_file_name, MainWindow):
         successes = 0
         failed = 0
         for image_path_in_colab in glob.glob(f'{cropped_image_name}')[:1]:
-            if DEBUG:
-                print("Processing Image:", image_path_in_colab)
-
             # load the input image, convert it from BGR to RGB channel ordering,
             # and initialize our Tesseract OCR options as an empty string
             image = cv2.imread(image_path_in_colab)
 
             # Rotate / Deskew the image
             if rotate:
-                if DEBUG:
-                    print("image before deskew:")
-                    cv2.imshow("before deskew", image)
-
                 image = deskew(image_path_in_colab)
-                if DEBUG:
-                    print("image after deskew:")
-                    cv2.imshow("after deskew", image)
 
             image_proportsion =  image.shape[0] / image.shape[1]
-
-            if DEBUG:
-                print("Original Size: Width:",image.shape[1], "Height:", image.shape[0], "Proportion:", image_proportsion, "New Width:", new_width)
 
             #Rescaling
             dim = (new_width, int(new_width*image_proportsion))
@@ -111,71 +92,86 @@ def model(image_file_name, MainWindow):
             numeric_filter = filter(str.isdigit, detected)
             digits = "".join(numeric_filter)
             
-            if DEBUG:
-                print("detected digits:", digits)
-
         return digits, cropped_image_name
 
-    #Need to install Tesseract-OCR on the specified folder ("C:/Program Files")
-    pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files/Tesseract-OCR/tesseract.exe'
+    pytesseract.pytesseract.tesseract_cmd = './Tesseract-OCR/tesseract.exe'
 
     shutil.rmtree(f'./runs/detect/predict', ignore_errors=True)
-    #subprocess.run(["yolo", "task=detect", "mode=predict", f"model=./BusSignesModel.pt", "conf=0.6", f"source={image_file_name}", "save=True", "save_crop=True"])
 
     model = YOLO("BusSignesModel.pt")
     results = model.predict(image_file_name, task="detect",conf=0.6, save=True, save_crop=True)
 
     detect_digits, cropped_image =  detect_bus_signs_numbers(440, rotate=True)
   
-    if DEBUG:  
-        print("Done. detect=", detect_digits)
-
     return detect_digits, cropped_image
 
 
+#The main class of the GUI application
 class Ui_MainWindow(QDialog):
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("Mika Bus Signs Detection")
-        MainWindow.resize(611, 505)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.boutton1 = QtWidgets.QPushButton(self.centralwidget)
-        self.boutton1.setGeometry(QtCore.QRect(230, 380, 151, 71))
-        self.boutton1.setObjectName("boutton1")
-
-        self.label1 = QtWidgets.QLabel(self.centralwidget)
-        self.label1.setGeometry(QtCore.QRect(250, 40, 171, 41))
-        self.label1.setText("")
-        self.label1.setObjectName("label1")
-        self.lineEdit1 = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineEdit1.setGeometry(QtCore.QRect(30, 320, 541, 31))
-        self.lineEdit1.setObjectName("lineEdit1")
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(130, 50, 341, 201))
-        self.label.setText("")
-        self.label.setObjectName("label")
-        label = QLabel(self)
+        if not MainWindow.objectName():
+            MainWindow.setObjectName("Mika Bus Signs Detection")
+        MainWindow.resize(1137, 925)
+        self.centralwidget = QWidget(MainWindow)
+        self.centralwidget.setObjectName(u"centralwidget")
+        self.boutton1 = QPushButton(self.centralwidget)
+        self.boutton1.setObjectName(u"boutton1")
+        self.boutton1.setGeometry(QRect(460, 800, 211, 71))
+        self.lineEdit1 = QLineEdit(self.centralwidget)
+        self.lineEdit1.setObjectName(u"lineEdit1")
+        self.lineEdit1.setGeometry(QRect(20, 750, 1091, 31))
+        self.left_picture = QLabel(self.centralwidget)
+        self.left_picture.setObjectName(u"left_picture")
+        self.left_picture.setGeometry(QRect(110, 160, 341, 431))
+        self.left_picture.setFrameShape(QFrame.Box)
+        self.left_picture.setMidLineWidth(0)
+        self.left_picture.setMargin(8)
+        self.right_picture = QLabel(self.centralwidget)
+        self.right_picture.setObjectName(u"right_picture")
+        self.right_picture.setGeometry(QRect(600, 50, 491, 631))
+        self.right_picture.setFrameShape(QFrame.Box)
+        self.line = QFrame(self.centralwidget)
+        self.line.setObjectName(u"line")
+        self.line.setGeometry(QRect(560, 20, 20, 721))
+        self.line.setFrameShape(QFrame.VLine)
+        self.line.setFrameShadow(QFrame.Sunken)
+        self.label = QLabel(self.centralwidget)
+        self.label.setObjectName(u"label")
+        self.label.setGeometry(QRect(220, 130, 150, 20))
+        self.label.setIndent(-1)
+        self.label_2 = QLabel(self.centralwidget)
+        self.label_2.setObjectName(u"label_2")
+        self.label_2.setGeometry(QRect(790, 20, 150, 20))
+        self.label_2.setIndent(-1)
         MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 611, 22))
+        self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName("menubar")
+        self.menubar.setGeometry(QRect(0, 0, 1137, 22))
         MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
         self.boutton1.clicked.connect(self.browsefiles)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+    # setupUi
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Buys Station Detector - By Mika Yeshaayaou"))
         self.boutton1.setText(_translate("MainWindow", "Upload Image"))
+        self.left_picture.setText("")
+        self.right_picture.setText("")
+        self.label.setText(_translate("MainWindow", u"The Corped Image", None))
+        self.label_2.setText(_translate("MainWindow", u"The Selected Image", None))
 
+        
+    # openning a file browser that returns a selected image (.jpg) file
+    # and then call the "model" function to detect the bus sign using 
+    # my YOLO model, and then detect the digits using OCR
+    # then prints the cropped file and the detected digits on the UI
     def browsefiles(self):
         fname=QFileDialog.getOpenFileName(self, 'Open file', '', 'Images (*.png, *.xmp *.jpg)')
         self.lineEdit1.setText("Detecting...")
@@ -186,13 +182,18 @@ class Ui_MainWindow(QDialog):
         detect_digits,cropped_image = model(image_file_name, MainWindow)
 
         pixmap = QPixmap(cropped_image)
-        self.label.setPixmap(pixmap)
-        self.label.updateGeometry()
+        self.left_picture.setPixmap(pixmap)
+        self.left_picture.updateGeometry()
+        full_pixmap = QPixmap(image_file_name)
+        full_pixmap = full_pixmap.scaled(self.right_picture.height(), self.right_picture.width(),  Qt.KeepAspectRatio)
+        self.right_picture.setPixmap(full_pixmap)
+        self.right_picture.updateGeometry()
 
         self.lineEdit1.setText("Detected Bus Station: " + detect_digits)
         self.lineEdit1.repaint()
+    # retranslateUi
 
-
+#the starting commands for starting the GUI application
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
